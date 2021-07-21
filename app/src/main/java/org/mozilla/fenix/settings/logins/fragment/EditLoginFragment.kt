@@ -26,11 +26,7 @@ import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.metrics.Event
-import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.redirectToReAuth
-import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
-import org.mozilla.fenix.ext.toEditable
+import org.mozilla.fenix.ext.*
 import org.mozilla.fenix.settings.logins.LoginsAction
 import org.mozilla.fenix.settings.logins.LoginsFragmentStore
 import org.mozilla.fenix.settings.logins.SavedLogin
@@ -100,8 +96,8 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
     }
 
     private fun formatEditableValues() {
-        hostnameText.isClickable = false
-        hostnameText.isFocusable = false
+        hostnameText.isClickable = true
+        hostnameText.isFocusable = true
         usernameText.inputType = InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
         // TODO: extend PasswordTransformationMethod() to change bullets to asterisks
         passwordText.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -265,11 +261,22 @@ class EditLoginFragment : Fragment(R.layout.fragment_edit_login) {
 
     override fun onPause() {
         redirectToReAuth(
-            listOf(R.id.loginDetailFragment),
+            listOf(R.id.loginDetailFragment, R.id.savedLoginsFragment),
             findNavController().currentDestination?.id,
             R.id.editLoginFragment
         )
         super.onPause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        val isEditing = oldLogin.guid.isNotEmpty()
+        if (isEditing) {
+            showToolbar(getString(R.string.edit))
+        } else {
+            showToolbar(getString(R.string.add_login))
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {

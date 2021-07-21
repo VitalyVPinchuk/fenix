@@ -345,6 +345,11 @@
             android:id="@+id/action_savedLoginsFragment_to_loginDetailFragment"
             app:destination="@id/loginDetailFragment" />
         <action
+            android:id="@+id/action_savedLoginsFragment_to_editLoginFragment"
+            app:destination="@id/editLoginFragment"
+            app:popUpTo="@id/editLoginFragment"
+            app:popUpToInclusive="true" />
+        <action
             android:id="@+id/action_savedLoginsFragment_to_browserFragment"
             app:destination="@id/browserFragment"
             app:popUpTo="@id/settingsFragment"

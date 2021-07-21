@@ -127,7 +127,9 @@ open class SavedLoginsStorageController(
         val fetchLoginJob = lifecycleScope.launch(ioDispatcher) {
             deferredLogin = async {
                 val login = getLogin(loginId)
-                passwordsStorage.getPotentialDupesIgnoringUsername(login!!)
+                println(login)
+                //passwordsStorage.getPotentialDupesIgnoringUsername(login!!)
+                emptyList()
             }
             val fetchedDuplicatesList = deferredLogin?.await()
             fetchedDuplicatesList?.let { list ->

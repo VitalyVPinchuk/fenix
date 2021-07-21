@@ -45,6 +45,13 @@ class LoginsListController(
         )
     }
 
+    fun handleAddLoginClicked() {
+        val newLogin = SavedLogin("", "www.intel.com", "username", "password", 1000L)
+        navController.navigate(
+            SavedLoginsFragmentDirections.actionSavedLoginsFragmentToEditLoginFragment(newLogin)
+        )
+    }
+
     fun handleLearnMoreClicked() {
         browserNavigator.invoke(
             SupportUtils.getGenericSumoURLForTopic(SupportUtils.SumoTopic.SYNC_SETUP),

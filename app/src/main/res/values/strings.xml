@@ -1442,6 +1442,8 @@
     <string name="preferences_passwords_save_logins_never_save">Never save</string>
     <!-- Preference for autofilling saved logins in Fenix -->
     <string name="preferences_passwords_autofill">Autofill</string>
+    <!-- Preference option for adding a login -->
+    <string name="preferences_logins_add_login">Add login</string>
     <!-- Preference for syncing saved logins in Fenix -->
     <string name="preferences_passwords_sync_logins">Sync logins</string>
     <!-- Preference for syncing saved logins in Fenix, when not signed in-->
@@ -1707,6 +1709,8 @@
     <string name="discard_changes">Discard changes</string>
     <!--  The page title for editing a saved login. -->
     <string name="edit">Edit</string>
+    <!--  The page title for adding new login. -->
+    <string name="add_login">Add login</string>
     <!--  The error message in edit login view when password field is blank. -->
     <string name="saved_login_password_required">Password required</string>
     <!-- Voice search button content description  -->
