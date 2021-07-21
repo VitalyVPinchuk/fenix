@@ -3,12 +3,12 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 object Versions {
-    const val kotlin = "1.4.30"
-    const val coroutines = "1.4.2"
+    const val kotlin = "1.5.20"
+    const val coroutines = "1.5.0"
 
     // These versions are linked: lint should be X+23.Y.Z of gradle_plugin version, according to:
     // https://github.com/alexjlockwood/android-lint-checks-demo/blob/0245fc027463137b1b4afb97c5295d60dce998b6/dependencies.gradle#L3
-    const val android_gradle_plugin = "4.0.1"
+    const val android_gradle_plugin = "4.2.2"
     const val android_lint_api = "27.0.1"
 
     const val sentry = "1.7.10"
@@ -17,7 +17,7 @@ object Versions {
     const val detekt = "1.17.1"
     const val jna = "5.6.0"
 
-    const val androidx_appcompat = "1.2.0"
+    const val androidx_appcompat = "1.3.0"
     const val androidx_biometric = "1.1.0"
     const val androidx_coordinator_layout = "1.1.0"
     const val androidx_constraint_layout = "2.0.4"
@@ -25,7 +25,7 @@ object Versions {
     const val androidx_legacy = "1.0.0"
     const val androidx_annotation = "1.1.0"
     const val androidx_lifecycle = "2.2.0"
-    const val androidx_fragment = "1.2.5"
+    const val androidx_fragment = "1.3.4"
     const val androidx_navigation = "2.3.3"
     const val androidx_recyclerview = "1.2.0-beta01"
     const val androidx_core = "1.3.2"
@@ -243,6 +243,7 @@ object RepoMatching {
     const val androidx = "androidx\\..*"
     const val comAndroid = "com\\.android.*"
     const val comGoogleFirebase = "com\\.google\\.firebase"
+    const val comGoogleTesting = "com\\.google\\.testing\\..*"
 
     /**
      * A matcher for com.google.android.* with one exception: the espresso-contrib dependency includes the

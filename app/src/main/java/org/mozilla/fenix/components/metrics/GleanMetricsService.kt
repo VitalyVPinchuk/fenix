@@ -51,6 +51,7 @@ import org.mozilla.fenix.GleanMetrics.SearchSuggestions
 import org.mozilla.fenix.GleanMetrics.SearchWidget
 import org.mozilla.fenix.GleanMetrics.SetDefaultNewtabExperiment
 import org.mozilla.fenix.GleanMetrics.SetDefaultSettingExperiment
+import org.mozilla.fenix.GleanMetrics.StartOnHome
 import org.mozilla.fenix.GleanMetrics.SyncAccount
 import org.mozilla.fenix.GleanMetrics.SyncAuth
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
@@ -82,7 +83,7 @@ private class EventWrapper<T : Enum<T>>(
             if (index == 0) {
                 builder.append(part)
             } else {
-                builder.append(part[0].toUpperCase())
+                builder.append(part[0].uppercase())
                 builder.append(part.substring(1))
             }
         }
@@ -99,10 +100,14 @@ private class EventWrapper<T : Enum<T>>(
             null
         }
 
+        @Suppress("DEPRECATION")
+        // FIXME(#19967): Migrate to non-deprecated API.
         this.recorder(extras)
     }
 }
 
+@Suppress("DEPRECATION")
+// FIXME(#19967): Migrate to non-deprecated API.
 private val Event.wrapper: EventWrapper<*>?
     get() = when (this) {
         is Event.OpenedApp -> EventWrapper(
@@ -112,10 +117,6 @@ private val Event.wrapper: EventWrapper<*>?
         is Event.AppReceivedIntent -> EventWrapper(
             { Events.appReceivedIntent.record(it) },
             { Events.appReceivedIntentKeys.valueOf(it) }
-        )
-        is Event.AppAllStartup -> EventWrapper(
-            { Events.appOpenedAllStartup.record(it) },
-            { Events.appOpenedAllStartupKeys.valueOf(it) }
         )
         is Event.SearchBarTapped -> EventWrapper(
             { Events.searchBarTapped.record(it) },
@@ -195,6 +196,9 @@ private val Event.wrapper: EventWrapper<*>?
         )
         is Event.ChangedToDefaultBrowser -> EventWrapper<NoExtraKeys>(
             { Events.defaultBrowserChanged.record(it) }
+        )
+        is Event.DefaultBrowserNotifTapped -> EventWrapper<NoExtraKeys>(
+            { Events.defaultBrowserNotifTapped.record(it) }
         )
         is Event.OpenedBookmark -> EventWrapper<NoExtraKeys>(
             { BookmarksManagement.open.record(it) }
@@ -831,6 +835,18 @@ private val Event.wrapper: EventWrapper<*>?
         )
         is Event.HomeScreenDisplayed -> EventWrapper<NoExtraKeys>(
             { HomeScreen.homeScreenDisplayed.record(it) }
+        )
+
+        is Event.BrowserToolbarHomeButtonClicked -> EventWrapper<NoExtraKeys>(
+            { Events.browserToolbarHomeTapped.record(it) }
+        )
+
+        is Event.StartOnHomeEnterHomeScreen -> EventWrapper<NoExtraKeys>(
+            { StartOnHome.enterHomeScreen.record(it) }
+        )
+
+        is Event.StartOnHomeOpenTabsTray -> EventWrapper<NoExtraKeys>(
+            { StartOnHome.openTabsTray.record(it) }
         )
 
         // Don't record other events in Glean:

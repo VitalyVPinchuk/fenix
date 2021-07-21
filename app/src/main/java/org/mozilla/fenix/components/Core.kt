@@ -39,8 +39,11 @@ import mozilla.components.feature.pwa.ManifestStorage
 import mozilla.components.feature.pwa.WebAppShortcutManager
 import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.feature.recentlyclosed.RecentlyClosedMiddleware
+import mozilla.components.feature.search.middleware.AdsTelemetryMiddleware
 import mozilla.components.feature.search.middleware.SearchMiddleware
 import mozilla.components.feature.search.region.RegionMiddleware
+import mozilla.components.feature.search.telemetry.ads.AdsTelemetry
+import mozilla.components.feature.search.telemetry.incontent.InContentTelemetry
 import mozilla.components.feature.session.HistoryDelegate
 import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.session.middleware.undo.UndoMiddleware
@@ -63,17 +66,19 @@ import mozilla.components.support.locale.LocaleManager
 import org.mozilla.fenix.AppRequestInterceptor
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.Config
+import org.mozilla.fenix.FeatureFlags
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.search.SearchMigration
 import org.mozilla.fenix.downloads.DownloadService
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.historymetadata.DefaultHistoryMetadataService
+import org.mozilla.fenix.historymetadata.HistoryMetadataMiddleware
+import org.mozilla.fenix.historymetadata.HistoryMetadataService
 import org.mozilla.fenix.media.MediaSessionService
 import org.mozilla.fenix.perf.StrictModeManager
 import org.mozilla.fenix.perf.lazyMonitored
-import org.mozilla.fenix.search.telemetry.ads.AdsTelemetry
-import org.mozilla.fenix.search.telemetry.incontent.InContentTelemetry
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.advanced.getSelectedLocale
 import org.mozilla.fenix.telemetry.TelemetryMiddleware
@@ -191,7 +196,6 @@ class Core(
                 ReaderViewMiddleware(),
                 TelemetryMiddleware(
                     context.settings(),
-                    adsTelemetry,
                     metrics
                 ),
                 ThumbnailsMiddleware(thumbnailStorage),
@@ -203,8 +207,14 @@ class Core(
                     migration = SearchMigration(context)
                 ),
                 RecordingDevicesMiddleware(context),
-                PromptMiddleware()
+                PromptMiddleware(),
+                AdsTelemetryMiddleware(adsTelemetry)
+//                LastMediaAccessMiddleware() // disabled to avoid a nightly crash in #20402
             )
+
+        if (FeatureFlags.historyMetadataFeature) {
+            middlewareList += HistoryMetadataMiddleware(historyMetadataService)
+        }
 
         BrowserStore(
             middleware = middlewareList + EngineMiddleware.create(engine)
@@ -240,6 +250,15 @@ class Core(
     }
 
     /**
+     * The [HistoryMetadataService] is used to record history metadata.
+     */
+    val historyMetadataService: HistoryMetadataService by lazyMonitored {
+        DefaultHistoryMetadataService(storage = historyStorage).apply {
+            cleanup(System.currentTimeMillis() - HISTORY_METADATA_MAX_AGE_IN_MS)
+        }
+    }
+
+    /**
      * Icons component for loading, caching and processing website icons.
      */
     val icons by lazyMonitored {
@@ -251,11 +270,11 @@ class Core(
     }
 
     val adsTelemetry by lazyMonitored {
-        AdsTelemetry(metrics)
+        AdsTelemetry()
     }
 
     val searchTelemetry by lazyMonitored {
-        InContentTelemetry(metrics)
+        InContentTelemetry()
     }
 
     /**
@@ -424,5 +443,6 @@ class Core(
         private const val KEY_STORAGE_NAME = "core_prefs"
         private const val PASSWORDS_KEY = "passwords"
         private const val RECENTLY_CLOSED_MAX = 10
+        private const val HISTORY_METADATA_MAX_AGE_IN_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
     }
 }

@@ -260,7 +260,8 @@ open class DefaultToolbarMenu(
     }
 
     val reportSiteIssuePlaceholder = WebExtensionPlaceholderMenuItem(
-        id = WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID
+        id = WebCompatReporterFeature.WEBCOMPAT_REPORTER_EXTENSION_ID,
+        iconTintColorResource = primaryTextColor()
     )
 
     val addToHomeScreenItem = BrowserMenuImageText(
@@ -332,23 +333,17 @@ open class DefaultToolbarMenu(
         onItemTapped.invoke(ToolbarMenu.Item.Quit)
     }
 
-    private fun getSyncItemTitle(): String {
-        val authenticatedAccount = accountManager.authenticatedAccount
-        val email = accountManager.accountProfileEmail
-
-        return if (authenticatedAccount && !email.isNullOrEmpty()) {
-            email
-        } else {
-            context.getString(R.string.sync_menu_sign_in)
-        }
-    }
+    private fun getSyncItemTitle() =
+        accountManager.accountProfileEmail ?: context.getString(R.string.sync_menu_sign_in)
 
     val syncMenuItem = BrowserMenuImageText(
         getSyncItemTitle(),
         R.drawable.ic_signed_out,
         primaryTextColor()
     ) {
-        onItemTapped.invoke(ToolbarMenu.Item.SyncAccount(accountManager.signedInToFxa()))
+        onItemTapped.invoke(
+            ToolbarMenu.Item.SyncAccount(accountManager.accountState)
+        )
     }
 
     @VisibleForTesting(otherwise = PRIVATE)

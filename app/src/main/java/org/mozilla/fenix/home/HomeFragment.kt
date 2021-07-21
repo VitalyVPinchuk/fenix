@@ -96,6 +96,7 @@ import org.mozilla.fenix.components.FenixSnackbar
 import org.mozilla.fenix.components.PrivateShortcutCreateManager
 import org.mozilla.fenix.components.StoreProvider
 import org.mozilla.fenix.components.TabCollectionStorage
+import org.mozilla.fenix.components.accounts.AccountState
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.tips.FenixTipManager
 import org.mozilla.fenix.components.tips.Tip
@@ -105,7 +106,6 @@ import org.mozilla.fenix.components.toolbar.ToolbarPosition
 import org.mozilla.fenix.ext.asRecentTabs
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
-import org.mozilla.fenix.ext.navigateBlockingForAsyncNavGraph
 import org.mozilla.fenix.ext.measureNoInline
 import org.mozilla.fenix.ext.metrics
 import org.mozilla.fenix.ext.nav
@@ -113,9 +113,11 @@ import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.mozonline.showPrivacyPopWindow
+import org.mozilla.fenix.home.recentbookmarks.RecentBookmarksFeature
+import org.mozilla.fenix.home.recentbookmarks.controller.DefaultRecentBookmarksController
 import org.mozilla.fenix.home.recenttabs.controller.DefaultRecentTabsController
 import org.mozilla.fenix.home.sessioncontrol.DefaultSessionControlController
-import org.mozilla.fenix.home.sessioncontrol.RecentTabsListFeature
+import org.mozilla.fenix.home.recenttabs.RecentTabsListFeature
 import org.mozilla.fenix.home.sessioncontrol.SessionControlInteractor
 import org.mozilla.fenix.home.sessioncontrol.SessionControlView
 import org.mozilla.fenix.home.sessioncontrol.viewholders.CollectionViewHolder
@@ -176,6 +178,7 @@ class HomeFragment : Fragment() {
 
     private val topSitesFeature = ViewBoundFeatureWrapper<TopSitesFeature>()
     private val recentTabsListFeature = ViewBoundFeatureWrapper<RecentTabsListFeature>()
+    private val recentBookmarksFeature = ViewBoundFeatureWrapper<RecentBookmarksFeature>()
 
     @VisibleForTesting
     internal var getMenuButton: () -> MenuButton? = { menuButton }
@@ -232,6 +235,7 @@ class HomeFragment : Fragment() {
                             )
                         ).getTip()
                     },
+                    recentBookmarks = emptyList(),
                     showCollectionPlaceholder = components.settings.showCollectionsPlaceholderOnHome,
                     showSetAsDefaultBrowserCard = components.settings.shouldShowSetAsDefaultBrowserCard(),
                     recentTabs = components.core.store.state.asRecentTabs()
@@ -254,6 +258,20 @@ class HomeFragment : Fragment() {
                 feature = RecentTabsListFeature(
                     browserStore = components.core.store,
                     homeStore = homeFragmentStore
+                ),
+                owner = viewLifecycleOwner,
+                view = view
+            )
+        }
+
+        if (FeatureFlags.recentBookmarksFeature) {
+            recentBookmarksFeature.set(
+                feature = RecentBookmarksFeature(
+                    homeStore = homeFragmentStore,
+                    bookmarksUseCase = run {
+                        requireContext().components.useCases.bookmarksUseCases
+                    },
+                    scope = viewLifecycleOwner.lifecycleScope
                 ),
                 owner = viewLifecycleOwner,
                 view = view
@@ -283,6 +301,10 @@ class HomeFragment : Fragment() {
             ),
             recentTabController = DefaultRecentTabsController(
                 selectTabUseCase = components.useCases.tabsUseCases.selectTab,
+                navController = findNavController()
+            ),
+            recentBookmarksController = DefaultRecentBookmarksController(
+                activity = activity,
                 navController = findNavController()
             )
         )
@@ -416,6 +438,7 @@ class HomeFragment : Fragment() {
             }
 
             view.tab_button.setOnClickListener {
+                requireComponents.analytics.metrics.track(Event.StartOnHomeOpenTabsTray)
                 openTabsTray()
             }
 
@@ -556,7 +579,7 @@ class HomeFragment : Fragment() {
             requireContext().getString(R.string.snackbar_deleted_undo),
             {
                 requireComponents.useCases.tabsUseCases.undo.invoke()
-                findNavController().navigateBlockingForAsyncNavGraph(
+                findNavController().navigate(
                     HomeFragmentDirections.actionGlobalBrowser(null)
                 )
             },
@@ -599,7 +622,8 @@ class HomeFragment : Fragment() {
                     ).getTip()
                 },
                 showCollectionPlaceholder = components.settings.showCollectionsPlaceholderOnHome,
-                recentTabs = components.core.store.state.asRecentTabs()
+                recentTabs = components.core.store.state.asRecentTabs(),
+                recentBookmarks = emptyList()
             )
         )
 
@@ -648,7 +672,7 @@ class HomeFragment : Fragment() {
     }
 
     private fun navToSavedLogins() {
-        findNavController().navigateBlockingForAsyncNavGraph(
+        findNavController().navigate(
             HomeFragmentDirections.actionGlobalSavedLoginsAuthFragment())
     }
 
@@ -809,10 +833,13 @@ class HomeFragment : Fragment() {
                     }
                     is HomeMenu.Item.SyncAccount -> {
                         hideOnboardingIfNeeded()
-                        val directions = if (it.signedIn) {
-                            BrowserFragmentDirections.actionGlobalAccountSettingsFragment()
-                        } else {
-                            BrowserFragmentDirections.actionGlobalTurnOnSync()
+                        val directions = when (it.accountState) {
+                            AccountState.AUTHENTICATED ->
+                                BrowserFragmentDirections.actionGlobalAccountSettingsFragment()
+                            AccountState.NEEDS_REAUTHENTICATION ->
+                                BrowserFragmentDirections.actionGlobalAccountProblemFragment()
+                            AccountState.NO_ACCOUNT ->
+                                BrowserFragmentDirections.actionGlobalTurnOnSync()
                         }
                         nav(
                             R.id.homeFragment,

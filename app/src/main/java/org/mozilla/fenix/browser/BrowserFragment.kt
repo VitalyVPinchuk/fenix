@@ -36,11 +36,11 @@ import org.mozilla.fenix.components.TabCollectionStorage
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
-import org.mozilla.fenix.ext.navigateBlockingForAsyncNavGraph
 import org.mozilla.fenix.ext.navigateSafe
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.shortcut.PwaOnboardingObserver
+import org.mozilla.fenix.theme.ThemeManager
 import org.mozilla.fenix.trackingprotection.TrackingProtectionOverlay
 
 /**
@@ -82,9 +82,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             val homeAction = BrowserToolbar.Button(
                 imageDrawable = AppCompatResources.getDrawable(
                     requireContext(),
-                    R.drawable.ic_home
+                    R.drawable.mozac_ic_home
                 )!!,
                 contentDescription = requireContext().getString(R.string.browser_toolbar_home),
+                iconTintColorResource = ThemeManager.resolveAttribute(R.attr.primaryText, context),
                 listener = browserToolbarInteractor::onHomeButtonClicked
             )
 
@@ -206,7 +207,18 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     override fun onStop() {
         super.onStop()
         updateLastBrowseActivity()
+        if (FeatureFlags.historyMetadataFeature) {
+            updateHistoryMetadata()
+        }
         pwaOnboardingObserver?.stop()
+    }
+
+    private fun updateHistoryMetadata() {
+        getCurrentTab()?.let { tab ->
+            (tab as? TabSessionState)?.historyMetadata?.let {
+                requireComponents.core.historyMetadataService.updateMetadata(it, tab)
+            }
+        }
     }
 
     private fun subscribeToTabCollections() {
@@ -294,7 +306,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 )
                     .setText(view.context.getString(messageStringRes))
                     .setAction(requireContext().getString(R.string.create_collection_view)) {
-                        findNavController().navigateBlockingForAsyncNavGraph(
+                        findNavController().navigate(
                             BrowserFragmentDirections.actionGlobalHome(focusOnAddressBar = false)
                         )
                     }

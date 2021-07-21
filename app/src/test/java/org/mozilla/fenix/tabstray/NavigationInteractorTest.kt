@@ -35,7 +35,6 @@ import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.collections.CollectionsDialog
 import org.mozilla.fenix.collections.show
 import org.mozilla.fenix.components.TabCollectionStorage
-import org.mozilla.fenix.helpers.DisableNavGraphProviderAssertionRule
 import org.mozilla.fenix.components.bookmarks.BookmarksUseCase
 import org.mozilla.fenix.components.metrics.Event
 import org.mozilla.fenix.components.metrics.MetricController
@@ -55,13 +54,11 @@ class NavigationInteractorTest {
     private val context: Context = mockk(relaxed = true)
     private val collectionStorage: TabCollectionStorage = mockk(relaxed = true)
     private val showCollectionSnackbar: (Int, Boolean, Long?) -> Unit = mockk(relaxed = true)
+    private val showBookmarkSnackbar: (Int) -> Unit = mockk(relaxed = true)
     private val accountManager: FxaAccountManager = mockk(relaxed = true)
     private val activity: HomeActivity = mockk(relaxed = true)
 
     private val testDispatcher = TestCoroutineDispatcher()
-
-    @get:Rule
-    val disableNavGraphProviderAssertionRule = DisableNavGraphProviderAssertionRule()
 
     @get:Rule
     val coroutinesTestRule = MainCoroutineRule(testDispatcher)
@@ -82,6 +79,7 @@ class NavigationInteractorTest {
             tabsTrayStore,
             collectionStorage,
             showCollectionSnackbar,
+            showBookmarkSnackbar,
             accountManager,
             testDispatcher
         )
@@ -238,23 +236,9 @@ class NavigationInteractorTest {
 
     @Test
     fun `onBookmarkTabs calls navigation on DefaultNavigationInteractor`() = runBlockingTest {
-        navigationInteractor = DefaultNavigationInteractor(
-            context,
-            activity,
-            store,
-            navController,
-            metrics,
-            dismissTabTray,
-            dismissTabTrayAndNavigateHome,
-            bookmarksUseCase,
-            tabsTrayStore,
-            collectionStorage,
-            showCollectionSnackbar,
-            accountManager,
-            coroutineContext
-        )
         navigationInteractor.onSaveToBookmarks(listOf(createTrayTab()))
         coVerify(exactly = 1) { bookmarksUseCase.addBookmark(any(), any(), any()) }
+        coVerify(exactly = 1) { showBookmarkSnackbar(1) }
     }
 
     @Test

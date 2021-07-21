@@ -34,7 +34,7 @@ class SettingsTest {
         microphone = ASK_TO_ALLOW,
         notification = ASK_TO_ALLOW,
         autoplayAudible = AutoplayAction.BLOCKED,
-        autoplayInaudible = AutoplayAction.BLOCKED,
+        autoplayInaudible = AutoplayAction.ALLOWED,
         persistentStorage = ASK_TO_ALLOW,
         mediaKeySystemAccess = ASK_TO_ALLOW
     )
@@ -606,7 +606,7 @@ class SettingsTest {
         )
 
         assertEquals(
-            AutoplayAction.BLOCKED,
+            AutoplayAction.ALLOWED,
             settings.getSitePermissionsCustomSettingsRules().autoplayInaudible
         )
     }
@@ -744,5 +744,25 @@ class SettingsTest {
         every { localSetting.timeNowInMillis() } returns now
 
         assertFalse(localSetting.shouldStartOnHome())
+    }
+
+    @Test
+    fun `GIVEN shownDefaultBrowserNotification and isDefaultBrowser WHEN calling shouldShowDefaultBrowserNotification THEN return correct value`() {
+        val localSetting = spyk(settings)
+        every { localSetting.isDefaultBrowserBlocking() } returns false
+
+        localSetting.defaultBrowserNotificationDisplayed = false
+        assert(localSetting.shouldShowDefaultBrowserNotification())
+
+        localSetting.defaultBrowserNotificationDisplayed = true
+        assertFalse(localSetting.shouldShowDefaultBrowserNotification())
+
+        every { localSetting.isDefaultBrowserBlocking() } returns true
+
+        localSetting.defaultBrowserNotificationDisplayed = false
+        assertFalse(localSetting.shouldShowDefaultBrowserNotification())
+
+        localSetting.defaultBrowserNotificationDisplayed = true
+        assertFalse(localSetting.shouldShowDefaultBrowserNotification())
     }
 }
